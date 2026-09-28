@@ -7,6 +7,6 @@
       { "source": "**/*.@(js|html|webmanifest)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
     ]
   },
-  "functions": { "source": "functions", "runtime": "nodejs20" },
+  "functions": { "source": "functions", "runtime": "nodejs22" },
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" }
 }

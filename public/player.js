@@ -68,7 +68,7 @@ export class Beat {
       const s = this.step % 16;
       const t = this.nextTime;
       const st = this.style;
-      if (st.kick.includes(s)) { this.kick(t); this.bass(t, BASS_NOTES[Math.floor(this.step / 16) % 4], stepLen * 3); }
+      if (st.kick.includes(s)) { this.kick(t); if (this.onKick && !this.muted) setTimeout(this.onKick, Math.max(0, (t - this.ctx.currentTime) * 1000)); this.bass(t, BASS_NOTES[Math.floor(this.step / 16) % 4], stepLen * 3); }
       if (st.snare.includes(s)) this.snare(t);
       if (st.hat.includes(s)) this.hat(t, st.hatVol);
       this.nextTime += stepLen;

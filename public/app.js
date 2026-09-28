@@ -57,7 +57,7 @@ sel.innerHTML = PROFILES.map(p => `<option>${esc(p)}</option>`).join("");
 function enterApp() {
   if (!state.user || !state.profile) return;
   if (state.unsub) { state.unsub(); state.unsub = null; }
-  $("#who").textContent = `${state.profile}'s Revision`;
+  $("#who").textContent = state.profile;
   show("home"); subscribeTracks();
 }
 
@@ -177,7 +177,7 @@ $("#attachments").addEventListener("click", (e) => {
 });
 
 // ---------- make a track ----------
-const WORKING = ["Reading your notes", "Picking out the key facts", "Finding the rhymes", "Writing the chorus", "Laying down the beat", "Checking the facts", "Nearly there"];
+const WORKING = ["Reading your notes", "Picking out the key facts", "Cooking up the bars", "Writing the hook", "Dropping the beat", "Checking the facts", "Nearly there"];
 
 $("#make").addEventListener("click", async () => {
   const msg = $("#make-msg"); msg.textContent = "";
@@ -266,6 +266,9 @@ const performer = new Performer({
   onStop: () => setPlaying(false),
 });
 performer.voiceOn = lsGet("er-voice", "1") === "1";
+performer.beat.onKick = () => {
+  $$(".speaker").forEach(sp => { sp.classList.add("thump"); setTimeout(() => sp.classList.remove("thump"), 110); });
+};
 performer.speed = Number(lsGet("er-speed", "1"));
 
 function setPlaying(p) {
