@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elissa Revision</title>
+<meta name="description" content="Turn revision notes into tracks you can listen to and learn.">
+<meta name="theme-color" content="#2B1B5A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Elissa">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3EEFF; --card:#FFFFFF; --ink:#2B1B5A; --ink-2:#5E4F8C; --rule:#DCD3F7;
+  --pink:#FF4FA3; --yellow:#FFE44D; --mint:#3DDC97; --danger:#C62A5B;
+  --display:"Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --paper:#1B1231; --card:#261A45; --ink:#F3EEFF; --ink-2:#BDB1E4; --rule:#3A2C63; color-scheme: dark; }
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ height:100%; }
+body{
+  margin:0; min-height:100%; font-family:var(--body); font-size:1.0625rem; line-height:1.5; color:var(--ink);
+  background-color:var(--paper);
+  background-image:repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  padding: env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden]{ display:none !important; }
+button, input, select, textarea{ font:inherit; color:inherit; }
+button{ cursor:pointer; }
+:focus-visible{ outline:3px solid var(--pink); outline-offset:3px; border-radius:8px; }
+h1,h2,h3{ font-family:var(--display); line-height:1.1; margin:0; }
+.wrap{ max-width:1120px; margin:0 auto; padding:20px 20px 40px; }
+
+/* Wordmark: the highlighter swipe is the app's signature */
+.wordmark{ font-family:var(--display); font-weight:800; font-size:1.5rem; letter-spacing:-0.02em; margin:0; }
+.hl{
+  background-image:linear-gradient(100deg, transparent 0 2%, var(--yellow) 2% 97%, transparent 97%);
+  background-repeat:no-repeat; background-size:100% 55%; background-position:0 85%;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone; padding:0 .12em; color:#2B1B5A;
+}
+@media (prefers-color-scheme: dark){ .wordmark .hl{ color:#2B1B5A; } }
+
+.top{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:18px; }
+.link-btn{ background:none; border:0; padding:8px 4px; color:var(--ink-2); text-decoration:underline; text-underline-offset:3px; }
+
+/* Sign in */
+.signin{ max-width:420px; margin:10vh auto 0; padding:0 20px; }
+.signin h1{ font-size:clamp(2.4rem, 10vw, 3.4rem); font-weight:800; letter-spacing:-0.03em; margin-bottom:10px; }
+.signin p{ color:var(--ink-2); margin:0 0 28px; }
+.field{ display:block; margin-bottom:16px; }
+.field span{ display:block; font-weight:700; margin-bottom:6px; }
+.field input, .field select, textarea{
+  width:100%; padding:14px 16px; border:2px solid var(--ink); border-radius:14px; background:var(--card); font-size:1rem;
+}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px; border:0; border-radius:999px;
+  padding:16px 26px; font-family:var(--display); font-weight:800; font-size:1.15rem; background:var(--ink); color:var(--yellow);
+}
+.btn:disabled{ opacity:.55; cursor:progress; }
+.btn.full{ width:100%; }
+.msg{ min-height:1.5em; margin-top:12px; color:var(--danger); font-weight:700; }
+@media (prefers-color-scheme: dark){ .btn{ background:var(--yellow); color:#2B1B5A; } .msg{ color:#FF8FB7; } }
+
+/* Home */
+.home{ display:grid; gap:36px; }
+@media (min-width:900px){ .home{ grid-template-columns:minmax(0,5fr) minmax(0,6fr); align-items:start; } .studio{ position:sticky; top:20px; } }
+.studio h1{ font-size:clamp(2rem, 7vw, 2.9rem); font-weight:800; letter-spacing:-0.03em; margin:4px 0 22px; }
+.capture{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+.tile{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:104px; padding:12px 8px;
+  background:var(--card); border:2px solid var(--ink); border-radius:18px; font-weight:700; text-align:center; line-height:1.2;
+}
+.tile svg{ width:30px; height:30px; }
+.tile[aria-pressed="true"]{ background:var(--yellow); color:#2B1B5A; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.chip{
+  display:flex; align-items:center; gap:8px; padding:6px 6px 6px 8px; background:var(--card); border:1.5px solid var(--rule);
+  border-radius:12px; max-width:100%; font-size:.95rem;
+}
+.chip img{ width:40px; height:40px; object-fit:cover; border-radius:8px; }
+.chip .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; }
+.chip button{ border:0; background:transparent; width:32px; height:32px; border-radius:50%; font-size:1.3rem; line-height:1; }
+textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5; }
+.row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.styles{ border:0; padding:0; margin:0 0 20px; }
+.styles legend{ font-weight:700; margin-bottom:8px; padding:0; }
+.styles .opts{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.styles label{ position:relative; }
+.styles input{ position:absolute; opacity:0; inset:0; }
+.styles span{
+  display:block; text-align:center; padding:12px 4px; border:2px solid var(--ink); border-radius:12px; font-weight:700; background:var(--card);
+}
+.styles input:checked + span{ background:var(--pink); border-color:var(--pink); color:#fff; }
+.styles input:focus-visible + span{ outline:3px solid var(--pink); outline-offset:3px; }
+.working{ margin-top:14px; font-weight:700; display:flex; align-items:center; gap:10px; }
+.eq{ display:inline-flex; gap:3px; align-items:flex-end; height:20px; }
+.eq i{ width:4px; background:var(--pink); border-radius:2px; animation:eq 0.9s ease-in-out infinite; }
+.eq i:nth-child(2){ animation-delay:.15s } .eq i:nth-child(3){ animation-delay:.3s } .eq i:nth-child(4){ animation-delay:.45s }
+@keyframes eq{ 0%,100%{ height:5px } 50%{ height:20px } }
+
+/* Library of cassette tapes */
+.library h2{ font-size:1.6rem; font-weight:800; margin-bottom:6px; }
+.library .sub{ color:var(--ink-2); margin:0 0 16px; }
+.search{ width:100%; padding:12px 16px; border:2px solid var(--rule); border-radius:14px; background:var(--card); margin-bottom:16px; }
+.tapes{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:16px; }
+.tape{
+  --c:#9A8FC4; position:relative; display:block; width:100%; text-align:left; border:0; padding:12px 12px 44px;
+  border-radius:16px; background:var(--c); color:#2B1B5A; box-shadow:0 3px 0 rgba(43,27,90,.35);
+}
+.tape:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(43,27,90,.35); }
+.tape .label{ display:block; background:#FFFDF6; border-radius:8px; padding:10px 12px; min-height:84px; }
+.tape .t{ font-family:var(--display); font-weight:800; font-size:1.1rem; line-height:1.15; display:block; }
+.tape .m{ font-size:.85rem; color:#5E4F8C; display:block; margin-top:6px; }
+.tape .reels{ position:absolute; display:flex; left:50%; bottom:10px; transform:translateX(-50%); display:flex; gap:44px; }
+.tape .reels i{ width:22px; height:22px; border-radius:50%; background:#2B1B5A; box-shadow:inset 0 0 0 6px #FFFDF6; }
+.empty{ border:2px dashed var(--rule); border-radius:18px; padding:28px; text-align:center; color:var(--ink-2); }
+
+/* Player */
+.player-head{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.back{ display:inline-flex; align-items:center; gap:6px; border:2px solid var(--ink); background:var(--card); border-radius:999px; padding:8px 16px; font-weight:700; }
+.player h1{ font-size:clamp(1.9rem, 6.5vw, 2.8rem); font-weight:800; letter-spacing:-0.03em; margin:14px 0 6px; }
+.player .meta{ color:var(--ink-2); margin:0 0 18px; }
+.tabs{ display:flex; gap:6px; border-bottom:2px solid var(--ink); margin-bottom:22px; }
+.tabs button{ border:0; background:none; padding:10px 14px; font-weight:700; border-radius:12px 12px 0 0; color:var(--ink-2); }
+.tabs button[aria-selected="true"]{ background:var(--ink); color:var(--paper); }
+.lyrics{ max-width:36ch; font-size:clamp(1.3rem, 4.6vw, 1.8rem); line-height:1.55; padding-bottom:200px; }
+.section{ margin-bottom:26px; }
+.section-name{ font-family:var(--body); font-size:.95rem; font-weight:700; color:var(--pink); margin-bottom:4px; }
+.line{ margin:0 0 4px; transition:opacity .3s; cursor:pointer; }
+.line span{
+  background-image:linear-gradient(var(--yellow), var(--yellow)); background-repeat:no-repeat;
+  background-size:0% 60%; background-position:0 88%; transition:background-size .7s ease-out;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone;
+}
+.playing .line{ opacity:.55; }
+.playing .line.is-current{ opacity:1; }
+.line.is-current span{ background-size:100% 60%; }
+@media (prefers-color-scheme: dark){ .line.is-current span{ color:#2B1B5A; background-size:100% 100%; background-position:0 0; } }
+.facts{ list-style:none; padding:0; margin:0 0 200px; max-width:60ch; }
+.facts li{ padding:12px 0 12px 34px; position:relative; border-bottom:1.5px solid var(--rule); }
+.facts li::before{ content:""; position:absolute; left:4px; top:20px; width:18px; height:10px; background:var(--yellow); border-radius:3px; transform:rotate(-8deg); }
+.quiz{ max-width:60ch; padding-bottom:200px; }
+.score{ font-family:var(--display); font-weight:800; font-size:1.3rem; margin-bottom:16px; }
+.q{ background:var(--card); border:2px solid var(--ink); border-radius:18px; padding:18px; margin-bottom:16px; }
+.q h3{ font-family:var(--body); font-size:1.1rem; margin-bottom:12px; }
+.q .opt{ display:block; width:100%; text-align:left; padding:12px 14px; margin-bottom:8px; border:2px solid var(--rule); border-radius:12px; background:transparent; }
+.q .opt.right{ background:var(--mint); border-color:var(--mint); color:#12352A; font-weight:700; }
+.q .opt.wrong{ border-color:var(--danger); text-decoration:line-through; }
+.q .why{ margin:8px 0 0; color:var(--ink-2); }
+.danger-link{ color:var(--danger); }
+
+.controls{
+  position:fixed; left:0; right:0; bottom:0; z-index:5; background:var(--card); border-top:2px solid var(--ink);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+}
+.controls .inner{ max-width:1120px; margin:0 auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.play{
+  width:64px; height:64px; border-radius:50%; border:0; background:var(--pink); color:#fff; display:grid; place-items:center; flex:none;
+}
+.play svg{ width:28px; height:28px; }
+.ctl{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:.95rem; }
+.ctl input[type=range]{ width:110px; accent-color:var(--pink); }
+.toggle{ border:2px solid var(--ink); background:transparent; border-radius:999px; padding:8px 14px; font-weight:700; font-size:.95rem; }
+.toggle[aria-pressed="true"]{ background:var(--ink); color:var(--paper); }
+.spacer{ flex:1; }
+
+.toast{
+  position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); z-index:10;
+  background:#2B1B5A; color:#fff; padding:12px 18px; border-radius:14px; font-weight:700; max-width:calc(100% - 32px);
+}
+.splash{ min-height:80vh; display:grid; place-items:center; }
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+@media (max-width:420px){ .styles .opts{ grid-template-columns:repeat(2,1fr); } .ctl input[type=range]{ width:84px; } }
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+
+<div id="screen-splash" class="splash"><p class="wordmark"><span class="hl">Elissa Revision</span></p></div>
+
+<!-- Sign in -->
+<main id="screen-signin" class="signin" hidden>
+  <h1><span class="hl">Elissa</span><br>Revision</h1>
+  <p>Turn your revision notes into tracks you can listen to, rap along with and remember.</p>
+  <form id="signin-form" novalidate>
+    <label class="field"><span>Email</span><input id="si-email" type="email" autocomplete="username" required></label>
+    <label class="field"><span>Password</span><input id="si-pass" type="password" autocomplete="current-password" required></label>
+    <button class="btn full" type="submit">Sign in</button>
+    <p class="msg" id="si-msg" role="alert"></p>
+    <button class="link-btn" type="button" id="si-forgot">Forgotten your password?</button>
+  </form>
+</main>
+
+<!-- Home -->
+<div id="screen-home" class="wrap" hidden>
+  <header class="top">
+    <p class="wordmark"><span class="hl">Elissa Revision</span></p>
+    <button class="link-btn" id="signout">Sign out</button>
+  </header>
+  <div class="home">
+    <section class="studio" aria-labelledby="studio-h">
+      <h1 id="studio-h">Turn your notes into a track</h1>
+
+      <div class="capture">
+        <button class="tile" id="btn-camera" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          Take a photo
+        </button>
+        <button class="tile" id="btn-upload" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M12 17v-6M9 14l3-3 3 3"/></svg>
+          Upload a file
+        </button>
+        <button class="tile" id="btn-type" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg>
+          Type notes
+        </button>
+      </div>
+      <input id="in-camera" type="file" accept="image/*" capture="environment" class="sr" tabindex="-1">
+      <input id="in-file" type="file" accept="image/*,.pdf,.docx,.txt,.md,application/pdf" multiple class="sr" tabindex="-1">
+
+      <div class="chips" id="attachments" aria-live="polite"></div>
+      <label class="sr" for="notes">Your notes</label>
+      <textarea id="notes" placeholder="Type or paste your revision notes here" hidden></textarea>
+
+      <div class="row">
+        <label class="field"><span>Subject</span>
+          <select id="subject">
+            <option value="">Work it out for me</option>
+          </select>
+        </label>
+        <label class="field"><span>Level</span>
+          <select id="level">
+            <option value="KS2">Key Stage 2</option>
+            <option value="KS3" selected>Key Stage 3</option>
+            <option value="GCSE">GCSE</option>
+            <option value="A level">A level</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="styles">
+        <legend>Style</legend>
+        <div class="opts">
+          <label><input type="radio" name="style" value="rap" checked><span>Rap</span></label>
+          <label><input type="radio" name="style" value="pop"><span>Pop</span></label>
+          <label><input type="radio" name="style" value="chant"><span>Chant</span></label>
+          <label><input type="radio" name="style" value="chill"><span>Chill</span></label>
+        </div>
+      </fieldset>
+
+      <button class="btn full" id="make" type="button">Make my track</button>
+      <p class="working" id="working" hidden><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="working-text">Reading your notes</span></p>
+      <p class="msg" id="make-msg" role="alert"></p>
+    </section>
+
+    <section class="library" aria-labelledby="lib-h">
+      <h2 id="lib-h">Your tracks</h2>
+      <p class="sub" id="lib-count"></p>
+      <label class="sr" for="search">Search your tracks</label>
+      <input class="search" id="search" type="search" placeholder="Search by title or subject" hidden>
+      <div class="tapes" id="tapes"></div>
+      <div class="empty" id="empty" hidden>No tracks yet. Snap a revision sheet and make your first one.</div>
+    </section>
+  </div>
+</div>
+
+<!-- Player -->
+<div id="screen-player" class="wrap player" hidden>
+  <div class="player-head">
+    <button class="back" id="back" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      Tracks
+    </button>
+  </div>
+  <h1 id="p-title"></h1>
+  <p class="meta" id="p-meta"></p>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="lyrics">Lyrics</button>
+    <button role="tab" aria-selected="false" data-tab="facts">Key facts</button>
+    <button role="tab" aria-selected="false" data-tab="quiz">Quiz</button>
+  </div>
+  <div id="tab-lyrics" class="lyrics"></div>
+  <div id="tab-facts" hidden><ul class="facts" id="facts"></ul></div>
+  <div id="tab-quiz" class="quiz" hidden></div>
+  <p style="padding-bottom:140px"><button class="link-btn danger-link" id="delete" type="button">Delete this track</button></p>
+
+  <div class="controls">
+    <div class="inner">
+      <button class="play" id="play" type="button" aria-label="Play">
+        <svg id="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+        <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" hidden><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
+      </button>
+      <label class="ctl">Speed <input id="speed" type="range" min="0.8" max="1.2" step="0.05" value="1"></label>
+      <button class="toggle" id="t-voice" type="button" aria-pressed="true">Voice</button>
+      <button class="toggle" id="t-beat" type="button" aria-pressed="true">Beat</button>
+      <button class="toggle" id="t-chorus" type="button" aria-pressed="false">Loop chorus</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module" src="app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>
