@@ -196,19 +196,19 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
   <h1><span class="hl">Elissa</span><br>Revision</h1>
   <p>Turn your revision notes into tracks you can listen to, rap along with and remember.</p>
   <form id="signin-form" novalidate>
-    <label class="field"><span>Email</span><input id="si-email" type="email" autocomplete="username" required></label>
-    <label class="field"><span>Password</span><input id="si-pass" type="password" autocomplete="current-password" required></label>
-    <button class="btn full" type="submit">Sign in</button>
+    <label class="field"><span>Who's revising?</span>
+      <select id="si-profile"></select>
+    </label>
+    <button class="btn full" type="submit">Let's go</button>
     <p class="msg" id="si-msg" role="alert"></p>
-    <button class="link-btn" type="button" id="si-forgot">Forgotten your password?</button>
   </form>
 </main>
 
 <!-- Home -->
 <div id="screen-home" class="wrap" hidden>
   <header class="top">
-    <p class="wordmark"><span class="hl">Elissa Revision</span></p>
-    <button class="link-btn" id="signout">Sign out</button>
+    <p class="wordmark"><span class="hl" id="who">Elissa Revision</span></p>
+    <button class="link-btn" id="signout">Switch user</button>
   </header>
   <div class="home">
     <section class="studio" aria-labelledby="studio-h">

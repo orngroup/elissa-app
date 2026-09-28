@@ -11,7 +11,9 @@ initializeApp();
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 
 const MODEL = "claude-sonnet-5";
-const DAILY_LIMIT = 25;          // tracks per person per day – keeps costs predictable
+const PROFILES = ["elissa"];      // lower-case, must match the app and firestore.rules
+const DAILY_LIMIT = 25;          // tracks per person per day
+const GLOBAL_DAILY_LIMIT = 40;   // tracks per day across everyone – a hard cap on cost
 const MAX_FILES = 5;
 const MAX_TEXT = 40000;
 
@@ -101,23 +103,28 @@ function cleanTrack(raw) {
 exports.makeTrack = onCall(
   { region: "europe-west2", secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 180, memory: "512MiB", maxInstances: 3 },
   async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to make a track.");
-    const uid = request.auth.uid;
-    const { text = "", files = [], style = "rap", level = "KS3", subject = "" } = request.data || {};
+    if (!request.auth) throw new HttpsError("unauthenticated", "Reload the app and try again.");
+    const { text = "", files = [], style = "rap", level = "KS3", subject = "", profile = "" } = request.data || {};
+    if (!PROFILES.includes(profile)) throw new HttpsError("permission-denied", "Pick who's revising first.");
 
     if (typeof text !== "string" || text.length > MAX_TEXT) throw new HttpsError("invalid-argument", "Those notes are too long. Split them into smaller chunks.");
     if (!Array.isArray(files) || files.length > MAX_FILES) throw new HttpsError("invalid-argument", `Add up to ${MAX_FILES} files per track.`);
     if (!text.trim() && !files.length) throw new HttpsError("invalid-argument", "Add a photo, a file or some notes first.");
 
-    // Daily limit
+    // Daily limits (per person, plus an overall cap)
     const db = getFirestore();
     const today = new Date().toISOString().slice(0, 10);
-    const usageRef = db.doc(`usage/${uid}_${today}`);
+    const personRef = db.doc(`usage/${profile}_${today}`);
+    const allRef = db.doc(`usage/all_${today}`);
     await db.runTransaction(async (tx) => {
-      const snap = await tx.get(usageRef);
-      const count = snap.exists ? snap.data().count || 0 : 0;
-      if (count >= DAILY_LIMIT) throw new HttpsError("resource-exhausted", `That's ${DAILY_LIMIT} tracks today – brilliant effort! Try again tomorrow.`);
-      tx.set(usageRef, { uid, date: today, count: count + 1 }, { merge: true });
+      const [p, a] = await Promise.all([tx.get(personRef), tx.get(allRef)]);
+      const pc = p.exists ? p.data().count || 0 : 0;
+      const ac = a.exists ? a.data().count || 0 : 0;
+      if (pc >= DAILY_LIMIT || ac >= GLOBAL_DAILY_LIMIT) {
+        throw new HttpsError("resource-exhausted", `That's ${pc} tracks today – brilliant effort! Try again tomorrow.`);
+      }
+      tx.set(personRef, { profile, date: today, count: pc + 1 }, { merge: true });
+      tx.set(allRef, { date: today, count: ac + 1 }, { merge: true });
     });
 
     // Build the message

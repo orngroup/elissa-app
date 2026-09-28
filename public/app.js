@@ -1,6 +1,6 @@
-import { firebaseConfig, FUNCTIONS_REGION } from "./firebase-config.js";
+import { firebaseConfig, FUNCTIONS_REGION, PROFILES } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, setDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp
@@ -25,7 +25,7 @@ const SUBJECTS = {
 };
 const colourFor = (s) => SUBJECTS[s] || SUBJECTS.Other;
 
-const state = { user: null, attachments: [], tracks: [], current: null, unsub: null };
+const state = { user: null, profile: null, attachments: [], tracks: [], current: null, unsub: null };
 const MAX_FILES = 5;
 
 // ---------- small helpers ----------
@@ -46,33 +46,42 @@ function fmtDate(ts) {
 const lsGet = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
-// ---------- sign in ----------
+// ---------- choose who's revising ----------
+// The app signs in anonymously behind the scenes; the dropdown picks whose library to open.
+const profileId = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
+const tracksCol = () => collection(db, "profiles", profileId(state.profile), "tracks");
+
+const sel = $("#si-profile");
+sel.innerHTML = PROFILES.map(p => `<option>${esc(p)}</option>`).join("");
+
+function enterApp() {
+  if (!state.user || !state.profile) return;
+  if (state.unsub) { state.unsub(); state.unsub = null; }
+  $("#who").textContent = `${state.profile}'s Revision`;
+  show("home"); subscribeTracks();
+}
+
 onAuthStateChanged(auth, (user) => {
   state.user = user;
-  if (state.unsub) { state.unsub(); state.unsub = null; }
-  if (user) { show("home"); subscribeTracks(); }
-  else { performer.stop(true); show("signin"); }
+  if (!user) { signInAnonymously(auth).catch(() => { show("signin"); $("#si-msg").textContent = "Couldn't connect. Check the internet and reload."; }); return; }
+  const saved = lsGet("er-profile", "");
+  if (PROFILES.includes(saved)) { state.profile = saved; enterApp(); }
+  else show("signin");
 });
 
-$("#signin-form").addEventListener("submit", async (e) => {
+$("#signin-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  const msg = $("#si-msg"); msg.textContent = "";
-  const email = $("#si-email").value.trim(), pass = $("#si-pass").value;
-  if (!email || !pass) { msg.textContent = "Enter your email and password."; return; }
-  try { await signInWithEmailAndPassword(auth, email, pass); }
-  catch (err) {
-    msg.textContent = err.code === "auth/too-many-requests"
-      ? "Too many tries. Wait a few minutes, then try again."
-      : "That email and password don't match. Check them and try again.";
-  }
+  state.profile = sel.value; lsSet("er-profile", state.profile);
+  if (state.user) enterApp();
+  else $("#si-msg").textContent = "Still connecting. Try again in a second.";
 });
-$("#si-forgot").addEventListener("click", async () => {
-  const email = $("#si-email").value.trim();
-  if (!email) { $("#si-msg").textContent = "Type your email above first, then tap this again."; return; }
-  try { await sendPasswordResetEmail(auth, email); toast("Password reset email sent"); }
-  catch { $("#si-msg").textContent = "Couldn't send a reset email to that address."; }
+$("#signout").addEventListener("click", () => {
+  performer.stop(true);
+  if (state.unsub) { state.unsub(); state.unsub = null; }
+  state.profile = null; lsSet("er-profile", ""); state.tracks = [];
+  if (PROFILES.length === 1) { sel.value = PROFILES[0]; }
+  show("signin");
 });
-$("#signout").addEventListener("click", () => signOut(auth));
 
 // ---------- capture ----------
 const subjSel = $("#subject");
@@ -189,9 +198,9 @@ $("#make").addEventListener("click", async () => {
   const ticker = setInterval(() => { w = Math.min(w + 1, WORKING.length - 1); $("#working-text").textContent = WORKING[w]; }, 6000);
 
   try {
-    const res = await makeTrackFn({ text, files, style, level, subject });
+    const res = await makeTrackFn({ text, files, style, level, subject, profile: profileId(state.profile) });
     const track = res.data;
-    const ref = doc(collection(db, "users", state.user.uid, "tracks"));
+    const ref = doc(tracksCol());
     const record = { ...track, style, level, createdAt: serverTimestamp() };
     setDoc(ref, record).catch(() => toast("Couldn't save that track. Check your connection."));
     state.attachments = []; renderAttachments();
@@ -203,7 +212,7 @@ $("#make").addEventListener("click", async () => {
       code === "resource-exhausted" ? (err.message || "That's today's limit reached. Try again tomorrow.")
       : code === "invalid-argument" || code === "failed-precondition" ? (err.message || "Those notes couldn't be turned into a track. Try a clearer photo.")
       : code === "deadline-exceeded" ? "That took too long. Try fewer pages at once."
-      : code === "unauthenticated" ? "You've been signed out. Sign in again."
+      : code === "unauthenticated" || code === "permission-denied" ? "Couldn't connect. Reload the app and try again."
       : !navigator.onLine ? "You're offline. Connect to the internet to make a new track."
       : "Something went wrong making the track. Try again in a moment.";
   } finally {
@@ -213,7 +222,7 @@ $("#make").addEventListener("click", async () => {
 
 // ---------- library ----------
 function subscribeTracks() {
-  const q = query(collection(db, "users", state.user.uid, "tracks"), orderBy("createdAt", "desc"));
+  const q = query(tracksCol(), orderBy("createdAt", "desc"));
   state.unsub = onSnapshot(q, (snap) => {
     state.tracks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderLibrary();
@@ -367,6 +376,6 @@ $("#delete").addEventListener("click", async () => {
   const t = state.current; if (!t) return;
   if (!confirm(`Delete "${t.title}"? This can't be undone.`)) return;
   performer.stop(true);
-  try { await deleteDoc(doc(db, "users", state.user.uid, "tracks", t.id)); toast("Track deleted"); show("home"); }
+  try { await deleteDoc(doc(tracksCol(), t.id)); toast("Track deleted"); show("home"); }
   catch { toast("Couldn't delete that track. Try again."); }
 });

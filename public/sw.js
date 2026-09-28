@@ -1,5 +1,5 @@
 // Elissa Revision service worker – makes the app open instantly and work offline.
-const CACHE = "elissa-v1";
+const CACHE = "elissa-v2";
 const SHELL = ["./", "./index.html", "./app.js", "./player.js", "./firebase-config.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 

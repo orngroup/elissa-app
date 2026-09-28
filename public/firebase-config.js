@@ -11,3 +11,7 @@ export const firebaseConfig = {
 
 // London region for the Cloud Function
 export const FUNCTIONS_REGION = "europe-west2";
+
+// People who can use the app. To add someone, add their name here
+// AND to PROFILES in functions/index.js AND to firestore.rules.
+export const PROFILES = ["Elissa"];

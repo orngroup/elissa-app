@@ -21,13 +21,16 @@ Cloud Functions (which keep the API key hidden) need the pay-as-you-go **Blaze**
 2. Choose **Blaze** and link a billing account.
 3. When prompted, set a **budget alert** – £5 is plenty.
 
-## 2. Turn on sign-in and create Elissa's account
+## 2. Turn on sign-in
+
+The app has no email or password – Elissa just picks her name from a dropdown. Behind the scenes it uses Firebase's anonymous sign-in.
 
 1. Go to **Security → Authentication → Get started**.
-2. Under **Sign-in method**, enable **Email/Password**.
-3. Under **Users**, click **Add user** and create Elissa's login (and one for yourself if you'd like).
+2. Under **Sign-in method**, enable **Anonymous**.
 
-There's no public sign-up screen, so only accounts you create can use the app.
+To add another person later, add their name to `PROFILES` in `public/firebase-config.js`, the lower-case version to `PROFILES` in `functions/index.js`, and to the list in `firestore.rules`.
+
+Because there's no password, anyone who has the link could open the app. Costs are still capped by the daily limits in the function (25 per person, 40 overall) and by the spend limit on your Claude account.
 
 ## 3. Set the Firestore rules
 
@@ -82,6 +85,7 @@ Firebase Hosting is simplest, but the `public` folder also works on GitHub Pages
 In `functions/index.js`:
 
 - `DAILY_LIMIT` – tracks per day per person (currently 25).
+- `GLOBAL_DAILY_LIMIT` – tracks per day across everyone (currently 40).
 - `MODEL` – the Claude model used.
 
 After changing anything, run `firebase deploy` again. After changing files in `public/`, also bump `CACHE` in `public/sw.js` (for example `elissa-v2`) so her phone picks up the update.
