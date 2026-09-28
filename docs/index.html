@@ -262,23 +262,115 @@ dialog .field select{ font-size:.95rem; }
 .song-badge{ display:inline-block; font-family:var(--display); font-size:.7rem; background:var(--pink); color:var(--cream); padding:2px 8px; border-radius:999px; margin:6px 0 0 6px; }
 .song-progress{ height:6px; background:var(--wall-3); border-radius:3px; overflow:hidden; width:100%; max-width:260px; }
 .song-progress i{ display:block; height:100%; width:0; background:var(--gold); }
+
+/* Welcome + splash: wall of legends */
+.stage{
+  position:fixed; inset:0; z-index:20; overflow-y:auto;
+  background-color:var(--deep);
+  background-image:
+    linear-gradient(180deg, rgba(14,8,32,.55) 0%, rgba(14,8,32,.78) 45%, rgba(14,8,32,.96) 80%),
+    radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255,62,165,.18), transparent 70%),
+    url("img/legends.jpg");
+  background-size:cover, cover, cover; background-position:center, center, center top;
+  padding:calc(env(safe-area-inset-top,0px) + 24px) 20px calc(env(safe-area-inset-bottom,0px) + 32px);
+  display:flex; align-items:center; justify-content:center;
+}
+@media (min-width:700px){ .stage{ background-size:cover, cover, 520px auto; background-repeat:no-repeat, no-repeat, repeat; } }
+.stage-inner{ width:100%; max-width:420px; text-align:center; }
+.deck-art{ width:min(62vw, 250px); height:auto; display:block; margin:0 auto 6px; filter:drop-shadow(0 12px 24px rgba(0,0,0,.6)); }
+.deck-art .vinyl{ transform-origin:160px 160px; animation:spin 6s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.wordmark.big{ justify-content:center; margin:6px 0 4px; }
+.wordmark.big .tag{ font-size:clamp(3.4rem, 17vw, 4.8rem); }
+.wordmark.big .word{ font-size:clamp(1.3rem, 6vw, 1.8rem); text-shadow:3px 3px 0 var(--deep); }
+.strap{ font-family:var(--display); color:var(--cream); letter-spacing:.04em; margin:6px 0 10px; font-size:1rem; text-shadow:2px 2px 0 var(--deep); }
+.lede{ color:var(--ink-2); margin:0 auto 24px; max-width:32ch; }
+.mic-form{ text-align:left; background:rgba(42,26,78,.82); border:3px solid var(--cream); border-radius:20px; padding:18px; box-shadow:6px 6px 0 var(--pink); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+.splash-stage .eq{ margin-top:18px; }
+.splash-stage{ transition:opacity .45s ease; }
+.splash-stage.fade{ opacity:0; }
 </style>
 </head>
 <body>
 
-<div id="screen-splash" class="splash"><p class="wordmark"><span class="tag">Elissa</span><span class="word">Revision</span></p></div>
+<div id="screen-splash" class="stage splash-stage">
+  <div class="stage-inner">
+    <svg class="deck-art" viewBox="0 0 320 320" aria-hidden="true">
+      <defs>
+        <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#FFF6E8" stroke-opacity=".55" stroke-width="1.2"/></pattern>
+        <pattern id="xhatch" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 0L6 6M6 0L0 6" stroke="#0E0820" stroke-width="1.1"/></pattern>
+      </defs>
+      <g class="vinyl">
+        <circle cx="160" cy="160" r="150" fill="#0E0820" stroke="#FFF6E8" stroke-opacity=".25" stroke-width="2"/>
+        <g fill="none" stroke="#FFF6E8" stroke-opacity=".09">
+          <circle cx="160" cy="160" r="140"/><circle cx="160" cy="160" r="130"/><circle cx="160" cy="160" r="120"/><circle cx="160" cy="160" r="110"/>
+          <circle cx="160" cy="160" r="100"/><circle cx="160" cy="160" r="90"/><circle cx="160" cy="160" r="80"/><circle cx="160" cy="160" r="70"/>
+        </g>
+        <path d="M60 110 A110 110 0 0 1 120 55" fill="none" stroke="#FFF6E8" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="160" cy="160" r="52" fill="#FFC83D"/>
+        <circle cx="160" cy="160" r="52" fill="url(#xhatch)" opacity=".12"/>
+        <text x="160" y="152" text-anchor="middle" font-family="Permanent Marker, cursive" font-size="22" fill="#FF3EA5">Elissa</text>
+        <text x="160" y="178" text-anchor="middle" font-family="Bungee, sans-serif" font-size="11" fill="#0E0820">REVISION</text>
+        <circle cx="160" cy="160" r="5" fill="#0E0820"/>
+      </g>
+      <g class="mic" transform="rotate(-18 160 170)">
+        <path d="M160 238 C160 270 120 280 110 300" fill="none" stroke="#FFF6E8" stroke-width="4" stroke-linecap="round"/>
+        <path d="M146 176 L152 240 L168 240 L174 176 Z" fill="#1E1238" stroke="#FFF6E8" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M150 196 L170 196 M151 212 L169 212 M152 226 L168 226" stroke="#FFF6E8" stroke-opacity=".6" stroke-width="2"/>
+        <rect x="140" y="160" width="40" height="18" rx="4" fill="#FFC83D" stroke="#0E0820" stroke-width="3"/>
+        <rect x="128" y="70" width="64" height="96" rx="32" fill="#2A1A4E" stroke="#FFF6E8" stroke-width="4"/>
+        <rect x="128" y="70" width="64" height="96" rx="32" fill="url(#hatch)"/>
+        <path d="M130 118 H190" stroke="#FFF6E8" stroke-width="3"/>
+      </g>
+    </svg>
+    <p class="wordmark big"><span class="tag">Elissa</span><span class="word">Revision</span></p>
+    <p class="strap">Learn it. Spit it. Remember it.</p>
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  </div>
+</div>
 
 <!-- Sign in -->
-<main id="screen-signin" class="signin" hidden>
-  <h1 class="wordmark"><span class="tag">Elissa</span><span class="word">Revision</span></h1>
-  <p>Drop your revision notes, get a track you can rap along to and remember.</p>
-  <form id="signin-form" novalidate>
-    <label class="field"><span>Who's on the mic?</span>
-      <select id="si-profile"></select>
-    </label>
-    <button class="btn full" type="submit">Let's go</button>
-    <p class="msg" id="si-msg" role="alert"></p>
-  </form>
+<main id="screen-signin" class="stage" hidden>
+  <div class="stage-inner">
+    <svg class="deck-art" viewBox="0 0 320 320" aria-hidden="true">
+      <defs>
+        <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#FFF6E8" stroke-opacity=".55" stroke-width="1.2"/></pattern>
+        <pattern id="xhatch" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 0L6 6M6 0L0 6" stroke="#0E0820" stroke-width="1.1"/></pattern>
+      </defs>
+      <g class="vinyl">
+        <circle cx="160" cy="160" r="150" fill="#0E0820" stroke="#FFF6E8" stroke-opacity=".25" stroke-width="2"/>
+        <g fill="none" stroke="#FFF6E8" stroke-opacity=".09">
+          <circle cx="160" cy="160" r="140"/><circle cx="160" cy="160" r="130"/><circle cx="160" cy="160" r="120"/><circle cx="160" cy="160" r="110"/>
+          <circle cx="160" cy="160" r="100"/><circle cx="160" cy="160" r="90"/><circle cx="160" cy="160" r="80"/><circle cx="160" cy="160" r="70"/>
+        </g>
+        <path d="M60 110 A110 110 0 0 1 120 55" fill="none" stroke="#FFF6E8" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="160" cy="160" r="52" fill="#FFC83D"/>
+        <circle cx="160" cy="160" r="52" fill="url(#xhatch)" opacity=".12"/>
+        <text x="160" y="152" text-anchor="middle" font-family="Permanent Marker, cursive" font-size="22" fill="#FF3EA5">Elissa</text>
+        <text x="160" y="178" text-anchor="middle" font-family="Bungee, sans-serif" font-size="11" fill="#0E0820">REVISION</text>
+        <circle cx="160" cy="160" r="5" fill="#0E0820"/>
+      </g>
+      <g class="mic" transform="rotate(-18 160 170)">
+        <path d="M160 238 C160 270 120 280 110 300" fill="none" stroke="#FFF6E8" stroke-width="4" stroke-linecap="round"/>
+        <path d="M146 176 L152 240 L168 240 L174 176 Z" fill="#1E1238" stroke="#FFF6E8" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M150 196 L170 196 M151 212 L169 212 M152 226 L168 226" stroke="#FFF6E8" stroke-opacity=".6" stroke-width="2"/>
+        <rect x="140" y="160" width="40" height="18" rx="4" fill="#FFC83D" stroke="#0E0820" stroke-width="3"/>
+        <rect x="128" y="70" width="64" height="96" rx="32" fill="#2A1A4E" stroke="#FFF6E8" stroke-width="4"/>
+        <rect x="128" y="70" width="64" height="96" rx="32" fill="url(#hatch)"/>
+        <path d="M130 118 H190" stroke="#FFF6E8" stroke-width="3"/>
+      </g>
+    </svg>
+    <h1 class="wordmark big"><span class="tag">Elissa</span><span class="word">Revision</span></h1>
+    <p class="strap">Learn it. Spit it. Remember it.</p>
+    <p class="lede">Drop your revision notes. Get a track you can rap along to and never forget.</p>
+    <form id="signin-form" class="mic-form" novalidate>
+      <label class="field"><span>Who's on the mic?</span>
+        <select id="si-profile"></select>
+      </label>
+      <button class="btn full" type="submit">Let's go</button>
+      <p class="msg" id="si-msg" role="alert"></p>
+    </form>
+  </div>
 </main>
 
 <!-- Home -->

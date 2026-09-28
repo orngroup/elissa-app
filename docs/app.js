@@ -35,7 +35,17 @@ const MAX_FILES = 5;
 
 // ---------- small helpers ----------
 const SCREENS = ["splash", "signin", "home", "player", "playlist"];
-function show(id) { SCREENS.forEach(s => { $(`#screen-${s}`).hidden = s !== id; }); window.scrollTo(0, 0); }
+// Keep the splash up for a moment so it can be seen, then fade it out
+let splashDone = false, pendingScreen = null;
+setTimeout(() => {
+  splashDone = true;
+  const sp = $("#screen-splash");
+  if (pendingScreen) { sp.classList.add("fade"); setTimeout(() => show(pendingScreen), 420); }
+}, 1800);
+function show(id) {
+  if (!splashDone && id !== "splash") { pendingScreen = id; return; }
+  SCREENS.forEach(s => { $(`#screen-${s}`).hidden = s !== id; }); window.scrollTo(0, 0);
+}
 let toastTimer;
 function toast(text) {
   const t = $("#toast"); t.textContent = text; t.hidden = false;
