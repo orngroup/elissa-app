@@ -14,6 +14,7 @@ const auth = getAuth(app);
 const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 const functions = getFunctions(app, FUNCTIONS_REGION);
 const makeTrackFn = httpsCallable(functions, "makeTrack", { timeout: 180000 });
+const makeSongFn = httpsCallable(functions, "makeSong", { timeout: 560000 });
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -28,7 +29,7 @@ const colourFor = (s) => SUBJECTS[s] || SUBJECTS.Other;
 
 const state = {
   user: null, profile: null, attachments: [], tracks: [], playlists: [], favs: new Set(),
-  current: null, queue: null, libTab: "mine", openPlaylistId: null, unsubs: [],
+  songs: {}, mode: "synth", current: null, queue: null, libTab: "mine", openPlaylistId: null, unsubs: [],
 };
 const MAX_FILES = 5;
 
@@ -55,6 +56,7 @@ const base = () => ["profiles", profileId(state.profile)];
 const tracksCol = () => collection(db, ...base(), "tracks");
 const playlistsCol = () => collection(db, ...base(), "playlists");
 const favsDoc = () => doc(db, ...base(), "meta", "favourites");
+const songsCol = () => collection(db, ...base(), "songs");
 
 const allTracks = () => [...state.tracks, ...PRESETS];
 const trackById = (id) => allTracks().find(t => t.id === id);
@@ -77,6 +79,10 @@ function enterApp() {
     state.playlists = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderLibrary();
     if (!$("#screen-playlist").hidden) renderPlaylistScreen();
   }, () => {}));
+  state.unsubs.push(onSnapshot(songsCol(), (snap) => {
+    state.songs = Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+    renderLibrary(); if (state.current && !$("#screen-player").hidden) syncSongUI();
+  }, () => {}));
   state.unsubs.push(onSnapshot(favsDoc(), (snap) => {
     state.favs = new Set(snap.exists() ? snap.data().ids || [] : []); renderLibrary(); syncFavButton();
   }, () => {}));
@@ -97,7 +103,7 @@ $("#signin-form").addEventListener("submit", (e) => {
   if (state.user) enterApp(); else $("#si-msg").textContent = "Still connecting. Try again in a second.";
 });
 $("#signout").addEventListener("click", () => {
-  performer.stop(true); stopListening();
+  performer.stop(true); songAudio.pause(); stopListening();
   state.profile = null; lsSet("er-profile", ""); state.tracks = []; state.playlists = []; state.favs = new Set();
   show("signin");
 });
@@ -248,7 +254,7 @@ function tapeHTML(t) {
       <span class="label">
         <span class="t">${esc(t.title)}</span>
         <span class="m">${esc(t.subject || "Other")} · ${esc(t.topic || "")}</span>
-        ${t.preset ? `<span class="badge">GCSE pack</span>` : `<span class="m">${fmtDate(t.createdAt)}</span>`}
+        ${t.preset ? `<span class="badge">GCSE pack</span>` : `<span class="m">${fmtDate(t.createdAt)}</span>`}${state.songs[t.id] ? `<span class="song-badge">♪ Song</span>` : ""}
       </span>
       <span class="reels" aria-hidden="true"><i></i><i></i></span>
     </button>
@@ -386,6 +392,125 @@ $("#dlg-new-pl").addEventListener("submit", async (e) => {
 });
 $("#pl-dlg-done").addEventListener("click", () => plDlg.close());
 
+
+// ---------- real songs (ElevenLabs) ----------
+const songAudio = new Audio();
+songAudio.preload = "auto";
+let songLine = -1;
+const songOf = (t) => (t ? state.songs[t.id] : null);
+const usingSong = () => state.mode === "song" && !!songOf(state.current);
+
+function stopSong() { songAudio.pause(); }
+function stopAll() { performer.stop(true); performer.stopReading(); stopSong(); setPlaying(false); resetReadBtn(); }
+
+function syncSongUI() {
+  const t = state.current; if (!t) return;
+  const song = songOf(t);
+  $("#mode-row").hidden = !song;
+  if (!song && state.mode === "song") state.mode = "synth";
+  $$("#mode-row [data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
+  $("#p-song span").textContent = song ? "Remake the song" : "Make it a real song";
+  $("#p-song").classList.toggle("hot", !song);
+  $("#song-progress").hidden = !usingSong();
+  $("#t-sound").hidden = usingSong();
+  if (song && songAudio.dataset.track !== t.id) { songAudio.src = song.url; songAudio.dataset.track = t.id; }
+  if (song) songAudio.playbackRate = settings.speed;
+}
+
+$("#mode-row").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-mode]"); if (!b) return;
+  stopAll(); state.mode = b.dataset.mode; lsSet("er-mode", state.mode); syncSongUI();
+});
+
+// The planned timeline is stretched to the song's real length, since the music model may run slightly long or short
+function segs() {
+  const song = songOf(state.current); if (!song) return [];
+  const real = songAudio.duration * 1000, k = isFinite(real) && song.totalMs ? real / song.totalMs : 1;
+  const f = k > 0.6 && k < 1.7 ? k : 1;
+  return song.timeline.map(g => ({ ...g, startMs: g.startMs * f, durMs: g.durMs * f }));
+}
+function chorusSegment() {
+  const t = state.current; if (!t || !songOf(t)) return null;
+  const ci = (t.sections || []).findIndex(sec => sec.type === "chorus");
+  return ci >= 0 ? segs()[ci + 1] : null;
+}
+function lineAtMs(ms) {
+  const song = songOf(state.current); if (!song) return -1;
+  const seg = segs().find(g => g.lines && ms >= g.startMs && ms < g.startMs + g.durMs);
+  if (!seg) return -1;
+  return seg.lineStart + Math.min(seg.lines - 1, Math.floor((ms - seg.startMs) / seg.durMs * seg.lines));
+}
+function msAtLine(i) {
+  const song = songOf(state.current); if (!song) return 0;
+  const seg = segs().find(g => g.lines && i >= g.lineStart && i < g.lineStart + g.lines);
+  return seg ? seg.startMs + (i - seg.lineStart) / seg.lines * seg.durMs : 0;
+}
+
+songAudio.addEventListener("timeupdate", () => {
+  if (!usingSong()) return;
+  const ms = songAudio.currentTime * 1000;
+  const dur = songAudio.duration || (songOf(state.current)?.totalMs || 1) / 1000;
+  $("#song-progress i").style.width = `${Math.min(100, songAudio.currentTime / dur * 100)}%`;
+  const seg = chorusSegment();
+  if (performer.loopChorus && seg && (ms > seg.startMs + seg.durMs || ms < seg.startMs - 500)) { songAudio.currentTime = seg.startMs / 1000; return; }
+  const i = lineAtMs(ms);
+  if (i !== songLine) { songLine = i; if (i >= 0) performer.onLine(i); else $$(".line.is-current").forEach(el => el.classList.remove("is-current")); }
+});
+songAudio.addEventListener("ended", () => { if (usingSong()) handleEnd(); });
+songAudio.addEventListener("error", () => { if (usingSong() && songAudio.src) toast("Couldn't load the song. Check the internet connection."); setPlaying(false); });
+
+function playSong(fromLine = -1) {
+  performer.stop(true); performer.stopReading(); resetReadBtn();
+  songAudio.playbackRate = settings.speed;
+  if (fromLine >= 0) songAudio.currentTime = msAtLine(fromLine) / 1000;
+  else if (performer.loopChorus && chorusSegment()) songAudio.currentTime = chorusSegment().startMs / 1000;
+  songLine = -1;
+  songAudio.play().then(() => setPlaying(true)).catch(() => { setPlaying(false); toast("Tap play again to start the song"); });
+}
+
+// Make-a-song dialog
+const songDlg = $("#song-dlg");
+const STYLE_SONG_BEAT = { rap: "boombap", pop: "pop", chant: "grime", chill: "lofi" };
+const SONG_WORKING = ["Booking the studio", "Laying down the beat", "Warming up the vocals", "Recording the verses", "Stacking the hook", "Mixing it down", "Nearly there – adding the final polish"];
+let songBusy = false;
+$("#p-song").addEventListener("click", () => {
+  const t = state.current; if (!t) return;
+  const song = songOf(t);
+  $("#song-beat").value = song?.beat || lsGet("er-song-beat", "") || STYLE_SONG_BEAT[t.style] || "boombap";
+  $("#song-voice").value = song?.voice || lsGet("er-song-voice", "female-rap");
+  $("#song-h").textContent = song ? "Remake the song" : "Make it a real song";
+  if (!songBusy) { $("#song-msg").textContent = ""; $("#song-working").hidden = true; }
+  songDlg.showModal();
+});
+$("#song-cancel").addEventListener("click", () => songDlg.close());
+$("#song-go").addEventListener("click", async () => {
+  const t = state.current; if (!t || songBusy) return;
+  const beat = $("#song-beat").value, voice = $("#song-voice").value;
+  lsSet("er-song-beat", beat); lsSet("er-song-voice", voice);
+  songBusy = true; $("#song-go").disabled = true; $("#song-msg").textContent = "";
+  $("#song-working").hidden = false;
+  let w = 0; $("#song-working-text").textContent = SONG_WORKING[0];
+  const ticker = setInterval(() => { w = Math.min(w + 1, SONG_WORKING.length - 1); $("#song-working-text").textContent = SONG_WORKING[w]; }, 15000);
+  const trackIdAtStart = t.id;
+  try {
+    const res = await makeSongFn({ profile: profileId(state.profile), trackId: t.id, sections: t.sections, beat, voice });
+    state.songs[trackIdAtStart] = res.data;
+    if (state.current?.id === trackIdAtStart) {
+      stopAll(); state.mode = "song"; lsSet("er-mode", "song"); songAudio.dataset.track = ""; syncSongUI();
+      if (songDlg.open) songDlg.close();
+    }
+    renderLibrary();
+    toast("Your song is ready – press play!");
+  } catch (err) {
+    const code = String(err.code || "").replace("functions/", "");
+    $("#song-msg").textContent = ["resource-exhausted", "failed-precondition", "invalid-argument", "unavailable", "internal"].includes(code) && err.message
+      ? err.message : code === "deadline-exceeded" ? "The studio took too long. Try again – shorter tracks are quicker." : "Something went wrong making the song. Try again in a moment.";
+    if (!songDlg.open) toast($("#song-msg").textContent);
+  } finally {
+    clearInterval(ticker); songBusy = false; $("#song-go").disabled = false; $("#song-working").hidden = true;
+  }
+});
+
 // ---------- sound settings ----------
 const settings = {
   beat: lsGet("er-beat", "auto"), voice: lsGet("er-voice", ""), delivery: lsGet("er-delivery", "mc"),
@@ -456,15 +581,16 @@ const performer = new Performer({
     }
   },
   onStop: () => setPlaying(false),
-  onEnd: () => {
-    setPlaying(false);
-    const q = state.queue;
-    if (q && q.index < q.ids.length - 1) {
-      q.index++; const next = trackById(q.ids[q.index]);
-      if (next) setTimeout(() => openTrack(next, { autoplay: true }), 800);
-    }
-  },
+  onEnd: () => handleEnd(),
 });
+function handleEnd() {
+  setPlaying(false);
+  const q = state.queue;
+  if (q && q.index < q.ids.length - 1) {
+    q.index++; const next = trackById(q.ids[q.index]);
+    if (next) setTimeout(() => openTrack(next, { autoplay: true }), 800);
+  }
+}
 performer.beat.onKick = () => {
   $$(".speaker").forEach(sp => { sp.classList.add("thump"); setTimeout(() => sp.classList.remove("thump"), 110); });
 };
@@ -483,7 +609,8 @@ const explanationOf = (t) => Array.isArray(t.explanation) ? t.explanation : t.ex
 
 function openTrack(t, { autoplay = false } = {}) {
   state.current = t;
-  performer.stop(true); performer.stopReading(); setPlaying(false); resetReadBtn();
+  stopAll(); songLine = -1;
+  state.mode = songOf(t) ? lsGet("er-mode", "song") : "synth";
   $("#p-title").textContent = t.title;
   $("#p-meta").textContent = [t.subject, t.topic, styleName(t.style)].filter(Boolean).join(" · ");
   const q = state.queue;
@@ -514,7 +641,9 @@ function openTrack(t, { autoplay = false } = {}) {
   renderQuiz(t);
   selectTab("lyrics");
   show("player");
-  if (autoplay) { performer.play(0); setPlaying(true); }
+  syncSongUI();
+  if (usingSong()) songAudio.currentTime = 0;
+  if (autoplay) { if (usingSong()) playSong(); else { performer.play(0); setPlaying(true); } }
 }
 
 function renderQuiz(t) {
@@ -555,7 +684,7 @@ function resetReadBtn() { $("#read-explain").textContent = "Read it out clearly"
 $("#read-explain").addEventListener("click", () => {
   if (performer.reading) { performer.stopReading(); resetReadBtn(); return; }
   const t = state.current; if (!t) return;
-  performer.stop(true); setPlaying(false); applySettings();
+  stopSong(); performer.stop(true); setPlaying(false); applySettings();
   const texts = [...explanationOf(t), ...(t.keyFacts?.length ? ["Key facts.", ...t.keyFacts] : [])];
   $("#read-explain").textContent = "Stop reading";
   performer.readClearly(texts, resetReadBtn);
@@ -563,6 +692,11 @@ $("#read-explain").addEventListener("click", () => {
 
 $("#play").addEventListener("click", () => {
   performer.stopReading(); resetReadBtn();
+  if (usingSong()) {
+    selectTab("lyrics");
+    if (!songAudio.paused) { songAudio.pause(); setPlaying(false); } else playSong();
+    return;
+  }
   if (performer.playing) { performer.stop(true); setPlaying(false); return; }
   selectTab("lyrics"); applySettings(); performer.beatId = beatFor(state.current);
   const from = performer.index >= 0 && performer.index < performer.lines.length - 1 ? performer.index : 0;
@@ -570,6 +704,7 @@ $("#play").addEventListener("click", () => {
 });
 $("#tab-lyrics").addEventListener("click", (e) => {
   const l = e.target.closest(".line"); if (!l) return;
+  if (usingSong()) { playSong(Number(l.dataset.i)); return; }
   performer.stopReading(); resetReadBtn(); applySettings();
   performer.play(Number(l.dataset.i)); setPlaying(true);
 });
@@ -578,16 +713,18 @@ const speed = $("#speed");
 speed.value = settings.speed;
 speed.addEventListener("change", () => {
   settings.speed = Number(speed.value); lsSet("er-speed", speed.value); applySettings();
+  songAudio.playbackRate = settings.speed;
   if (performer.playing) { performer.play(Math.max(0, performer.index)); setPlaying(true); }
 });
 const chorusBtn = $("#t-chorus");
 chorusBtn.addEventListener("click", () => {
   performer.loopChorus = !performer.loopChorus; chorusBtn.setAttribute("aria-pressed", String(performer.loopChorus));
+  if (usingSong()) { if (!songAudio.paused && performer.loopChorus && chorusSegment()) songAudio.currentTime = chorusSegment().startMs / 1000; return; }
   if (performer.playing) { performer.play(Math.max(0, performer.index)); setPlaying(true); }
 });
 
 $("#back").addEventListener("click", () => {
-  performer.stop(true); performer.stopReading(); setPlaying(false);
+  stopAll();
   if (state.queue && currentPlaylist()) { renderPlaylistScreen(); show("playlist"); } else show("home");
 });
 document.addEventListener("visibilitychange", () => { if (document.hidden && performer.playing) { performer.stop(true); setPlaying(false); } });

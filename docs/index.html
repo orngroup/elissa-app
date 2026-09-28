@@ -254,6 +254,14 @@ dialog .field select{ font-size:.95rem; }
 .pl-pick label{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:2px solid var(--wall-3); font-weight:700; }
 .pl-pick input{ width:22px; height:22px; accent-color:var(--pink); }
 .dlg-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+
+.modes{ display:inline-flex; border:3px solid var(--cream); border-radius:999px; overflow:hidden; margin:0 0 20px; }
+.modes button{ border:0; background:transparent; padding:9px 16px; font-weight:700; }
+.modes button[aria-pressed="true"]{ background:var(--cyan); color:var(--deep); }
+.pill.hot{ background:var(--gold); border-color:var(--deep); color:var(--deep); box-shadow:4px 4px 0 var(--pink); }
+.song-badge{ display:inline-block; font-family:var(--display); font-size:.7rem; background:var(--pink); color:var(--cream); padding:2px 8px; border-radius:999px; margin:6px 0 0 6px; }
+.song-progress{ height:6px; background:var(--wall-3); border-radius:3px; overflow:hidden; width:100%; max-width:260px; }
+.song-progress i{ display:block; height:100%; width:0; background:var(--gold); }
 </style>
 </head>
 <body>
@@ -394,10 +402,19 @@ dialog .field select{ font-size:.95rem; }
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.6 5c2.1 0 3.6 1.2 4.4 2.5.8-1.3 2.3-2.5 4.4-2.5C19 5 21 8.6 19.6 11.8 17.5 16.4 12 21 12 21z"/></svg>
       <span>Favourite</span>
     </button>
+    <button class="pill hot" id="p-song" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      <span>Make it a real song</span>
+    </button>
     <button class="pill" id="p-addpl" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       Add to playlist
     </button>
+  </div>
+
+  <div class="modes" id="mode-row" hidden>
+    <button type="button" data-mode="song" aria-pressed="true">Real song</button>
+    <button type="button" data-mode="synth" aria-pressed="false">Beat + voice</button>
   </div>
 
   <div class="tabs" role="tablist">
@@ -424,6 +441,7 @@ dialog .field select{ font-size:.95rem; }
             <svg id="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
             <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" hidden><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
           </button>
+          <div class="song-progress" id="song-progress" hidden><i></i></div>
           <label class="ctl">Speed <input id="speed" type="range" min="0.8" max="1.2" step="0.05" value="1"></label>
         </div>
         <div class="deck-row">
@@ -446,6 +464,22 @@ dialog .field select{ font-size:.95rem; }
   <label class="switch">Hype man echoes the rhymes<input type="checkbox" id="set-hype"></label>
   <label class="switch">Rap-along mode (no voice, just lyrics)<input type="checkbox" id="set-karaoke"></label>
   <div class="dlg-foot"><button class="btn small ghost" id="sound-test" type="button">Test voice</button><button class="btn small" id="sound-done" type="button">Done</button></div>
+</dialog>
+
+<dialog id="song-dlg" aria-labelledby="song-h">
+  <h2 id="song-h">Make it a real song</h2>
+  <p class="hint" style="margin:0 0 16px">A real-sounding rapper or singer performs these lyrics over a proper beat. It takes a minute or two and costs a few pence.</p>
+  <label class="field"><span>Beat</span><select id="song-beat">
+    <option value="boombap">Boom bap</option><option value="trap">Trap</option><option value="grime">Grime</option>
+    <option value="drill">UK drill (clean)</option><option value="lofi">Lo-fi</option><option value="afro">Afrobeats</option><option value="pop">Pop</option>
+  </select></label>
+  <label class="field"><span>Voice</span><select id="song-voice">
+    <option value="female-rap">Female rapper</option><option value="male-rap">Male rapper</option>
+    <option value="female-sing">Female singer</option><option value="male-sing">Male singer</option>
+  </select></label>
+  <p class="working" id="song-working" hidden><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="song-working-text">Booking the studio</span></p>
+  <p class="msg" id="song-msg" role="alert"></p>
+  <div class="dlg-foot"><button class="btn small ghost" id="song-cancel" type="button">Close</button><button class="btn small" id="song-go" type="button">Make the song</button></div>
 </dialog>
 
 <dialog id="pl-dlg" aria-labelledby="pl-dlg-h">
