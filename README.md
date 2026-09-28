@@ -8,7 +8,7 @@ Your Firebase project `elissa-kawa` is already wired in. The steps below take ab
 
 | Path | What it does |
 |---|---|
-| `public/` | The app itself (this is what gets hosted) |
+| `docs/` | The app itself (this is what gets hosted) |
 | `functions/index.js` | The secure server function that holds your API key and calls Claude |
 | `firestore.rules` | Security rules – each person only sees their own tracks |
 | `firebase.json`, `.firebaserc` | Tells Firebase what to deploy and where |
@@ -28,7 +28,7 @@ The app has no email or password – Elissa just picks her name from a dropdown.
 1. Go to **Security → Authentication → Get started**.
 2. Under **Sign-in method**, enable **Anonymous**.
 
-To add another person later, add their name to `PROFILES` in `public/firebase-config.js`, the lower-case version to `PROFILES` in `functions/index.js`, and to the list in `firestore.rules`.
+To add another person later, add their name to `PROFILES` in `docs/firebase-config.js`, the lower-case version to `PROFILES` in `functions/index.js`, and to the list in `firestore.rules`.
 
 Because there's no password, anyone who has the link could open the app. Costs are still capped by the daily limits in the function (25 per person, 40 overall) and by the spend limit on your Claude account.
 
@@ -78,7 +78,7 @@ Tap the speaker/volume up the first time – on iPhone, make sure the silent swi
 
 ## Hosting on GitHub Pages instead (optional)
 
-Firebase Hosting is simplest, but the `public` folder also works on GitHub Pages as-is. If you do this, add your GitHub Pages domain (for example `orngroup.github.io`) under **Authentication → Settings → Authorised domains**. You still need step 6 for the function.
+Firebase Hosting is simplest, but the `docs` folder also works on GitHub Pages as-is. If you do this, add your GitHub Pages domain (for example `orngroup.github.io`) under **Authentication → Settings → Authorised domains**. You still need step 6 for the function.
 
 ## Handy settings
 
@@ -88,7 +88,7 @@ In `functions/index.js`:
 - `GLOBAL_DAILY_LIMIT` – tracks per day across everyone (currently 40).
 - `MODEL` – the Claude model used.
 
-After changing anything, run `firebase deploy` again. After changing files in `public/`, also bump `CACHE` in `public/sw.js` (for example `elissa-v2`) so her phone picks up the update.
+After changing anything, run `firebase deploy` again. After changing files in `docs/`, also bump `CACHE` in `docs/sw.js` (for example `elissa-v2`) so her phone picks up the update.
 
 ## Costs at a glance
 
