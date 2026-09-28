@@ -46,13 +46,17 @@ Rules:
 - Level: ${LEVELS[level] || LEVELS.KS3}. Pitch vocabulary to this level.
 - Subject: ${subject ? subject : "work it out from the notes and choose one of: Maths, English, Biology, Chemistry, Physics, Science, History, Geography, French, Spanish, German, Religious Studies, Computing, Music, Art, Drama, PE, Business, Other"}.
 
-Also write 5 to 10 key facts (plain sentences, straight from the notes) and a 5-question multiple-choice quiz with 4 options each, testing facts from the notes.
+Also write:
+- "explanation": 2 to 4 short paragraphs that explain the topic clearly and simply, like a great teacher talking to the pupil. Plain English, short sentences, one idea per paragraph, with a quick example where it helps. It will also be read aloud, so it must make sense when heard (for example write "x squared" rather than only "x²").
+- 5 to 10 key facts (plain sentences, straight from the notes).
+- A 5-question multiple-choice quiz with 4 options each, testing facts from the notes. Vary which option is correct.
 
 Return ONLY a JSON object, with no markdown and no other text, in exactly this shape:
 {
   "title": "catchy track title, max 6 words",
   "subject": "the subject",
   "topic": "the topic in a few words",
+  "explanation": ["paragraph", "paragraph"],
   "sections": [ { "type": "intro|verse|chorus|bridge|outro", "lines": ["line", "line"] } ],
   "keyFacts": ["fact"],
   "quiz": [ { "question": "question", "options": ["a", "b", "c", "d"], "answer": 0, "explanation": "one short sentence" } ]
@@ -94,6 +98,7 @@ function cleanTrack(raw) {
     title: str(raw.title, 80) || "Revision track",
     subject: str(raw.subject, 40) || "Other",
     topic: str(raw.topic, 80),
+    explanation: (Array.isArray(raw.explanation) ? raw.explanation : [raw.explanation]).map(p => str(p, 900)).filter(Boolean).slice(0, 5),
     sections,
     keyFacts: (Array.isArray(raw.keyFacts) ? raw.keyFacts : []).map(f => str(f, 300)).filter(Boolean).slice(0, 12),
     quiz,

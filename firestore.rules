@@ -3,8 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Each profile's library. To add someone, add their lower-case name to the list.
-    match /profiles/{profile}/tracks/{trackId} {
+    // Each profile's tracks, playlists and favourites.
+    // To add someone, add their lower-case name to the list.
+    match /profiles/{profile}/{document=**} {
       allow read, write: if request.auth != null && profile in ['elissa'];
     }
 

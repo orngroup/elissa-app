@@ -209,6 +209,51 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
   .toggle{ padding:6px 10px; font-size:.85rem; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } .speaker.thump{ transform:none; } }
+
+/* v2 additions */
+.lib-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+.lib-tabs button{ border:3px solid var(--cream); background:transparent; padding:7px 14px; font-family:var(--display); font-size:.85rem; border-radius:999px; }
+.lib-tabs button[aria-selected="true"]{ background:var(--gold); border-color:var(--gold); color:var(--deep); }
+.tape-wrap{ position:relative; }
+.tape-wrap:nth-child(3n+1) .tape{ transform:rotate(-1deg); } .tape-wrap:nth-child(3n+2) .tape{ transform:rotate(.8deg); } .tape-wrap:nth-child(3n) .tape{ transform:none; }
+.fav{ position:absolute; right:10px; bottom:8px; z-index:2; width:38px; height:38px; border-radius:50%; border:2px solid var(--deep); background:var(--cream); color:var(--deep); display:grid; place-items:center; }
+.fav svg{ width:20px; height:20px; }
+.fav[aria-pressed="true"]{ background:var(--pink); color:var(--cream); }
+.badge{ display:inline-block; font-family:var(--display); font-size:.7rem; background:var(--deep); color:var(--gold); padding:2px 8px; border-radius:999px; margin-top:6px; }
+.pl-grid{ display:grid; gap:12px; }
+.pl-card{ display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; text-align:left; padding:16px 18px; background:var(--wall-2); border:3px solid var(--cream); border-radius:16px; box-shadow:5px 5px 0 var(--deep); }
+.pl-card .n{ font-family:var(--display); font-size:1.1rem; }
+.pl-card .c{ color:var(--ink-2); font-size:.9rem; }
+.new-pl{ display:flex; gap:10px; margin-bottom:16px; }
+.new-pl input{ flex:1; padding:12px 14px; border:3px solid var(--cream); border-radius:14px; background:var(--wall-2); color:var(--cream); }
+.btn.small{ padding:10px 16px; font-size:.95rem; box-shadow:4px 4px 0 var(--pink); }
+.btn.ghost{ background:transparent; color:var(--cream); border-color:var(--cream); box-shadow:none; }
+.rows{ list-style:none; padding:0; margin:0 0 40px; }
+.rows li{ display:flex; align-items:center; gap:10px; border-bottom:2px solid var(--wall-3); }
+.rows .row-main{ flex:1; text-align:left; background:none; border:0; padding:14px 4px; }
+.rows .row-main b{ display:block; font-family:var(--tag); font-size:1.2rem; font-weight:400; }
+.rows .row-main span{ color:var(--ink-2); font-size:.9rem; }
+.rows .x{ border:0; background:none; font-size:1.4rem; width:40px; height:40px; color:var(--ink-2); }
+.actions{ display:flex; gap:10px; flex-wrap:wrap; margin:0 0 20px; }
+.pill{ display:inline-flex; align-items:center; gap:8px; border:3px solid var(--cream); background:transparent; border-radius:999px; padding:8px 14px; font-weight:700; }
+.pill svg{ width:18px; height:18px; }
+.pill[aria-pressed="true"]{ background:var(--pink); border-color:var(--pink); }
+.upnext{ color:var(--cyan); font-weight:700; margin:-8px 0 16px; }
+.explain{ max-width:62ch; padding-bottom:240px; }
+#read-explain{ margin-bottom:22px; }
+.explain p.para{ font-size:1.15rem; line-height:1.65; margin:0 0 16px; }
+.explain h3{ font-size:1.1rem; color:var(--gold); margin:26px 0 8px; }
+.explain .facts{ margin-bottom:0; }
+dialog{ border:3px solid var(--cream); border-radius:20px; background:var(--wall-2); color:var(--cream); padding:22px; width:min(440px, calc(100% - 32px)); box-shadow:8px 8px 0 var(--deep); }
+dialog::backdrop{ background:rgba(14,8,32,.7); }
+dialog h2{ font-size:1.3rem; color:var(--gold); margin-bottom:16px; }
+dialog .field select{ font-size:.95rem; }
+.switch{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; font-weight:700; }
+.switch input{ width:22px; height:22px; accent-color:var(--pink); }
+.hint{ color:var(--ink-2); font-size:.9rem; margin:-6px 0 12px; font-weight:400; }
+.pl-pick label{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:2px solid var(--wall-3); font-weight:700; }
+.pl-pick input{ width:22px; height:22px; accent-color:var(--pink); }
+.dlg-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
 </style>
 </head>
 <body>
@@ -268,8 +313,8 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
         <label class="field"><span>Level</span>
           <select id="level">
             <option value="KS2">Key Stage 2</option>
-            <option value="KS3" selected>Key Stage 3</option>
-            <option value="GCSE">GCSE</option>
+            <option value="KS3">Key Stage 3</option>
+            <option value="GCSE" selected>GCSE</option>
             <option value="A level">A level</option>
           </select>
         </label>
@@ -292,13 +337,45 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
 
     <section class="library" aria-labelledby="lib-h">
       <h2 id="lib-h">Your mixtape</h2>
+      <div class="lib-tabs" role="tablist" id="lib-tabs">
+        <button role="tab" aria-selected="true" data-lib="mine">My tracks</button>
+        <button role="tab" aria-selected="false" data-lib="gcse">GCSE pack</button>
+        <button role="tab" aria-selected="false" data-lib="favs">Favourites</button>
+        <button role="tab" aria-selected="false" data-lib="playlists">Playlists</button>
+      </div>
       <p class="sub" id="lib-count"></p>
       <label class="sr" for="search">Search your tracks</label>
       <input class="search" id="search" type="search" placeholder="Search by title or subject" hidden>
       <div class="tapes" id="tapes"></div>
-      <div class="empty" id="empty" hidden>Your mixtape is empty. Snap a revision sheet and make your first track.</div>
+      <div id="pl-view" hidden>
+        <form class="new-pl" id="new-pl-form">
+          <label class="sr" for="new-pl-name">Playlist name</label>
+          <input id="new-pl-name" placeholder="New playlist name, e.g. Maths mock" maxlength="40">
+          <button class="btn small" type="submit">Create</button>
+        </form>
+        <div class="pl-grid" id="pl-grid"></div>
+      </div>
+      <div class="empty" id="empty" hidden></div>
     </section>
   </div>
+</div>
+
+<!-- Playlist -->
+<div id="screen-playlist" class="wrap player" hidden>
+  <div class="player-head">
+    <button class="back" id="pl-back" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      Playlists
+    </button>
+  </div>
+  <h1 id="pl-title"></h1>
+  <p class="meta" id="pl-meta"></p>
+  <div class="actions">
+    <button class="btn small" id="pl-play" type="button">Play all</button>
+    <button class="pill" id="pl-rename" type="button">Rename</button>
+    <button class="pill" id="pl-delete" type="button">Delete playlist</button>
+  </div>
+  <ul class="rows" id="pl-rows"></ul>
 </div>
 
 <!-- Player -->
@@ -311,14 +388,30 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
   </div>
   <h1 id="p-title"></h1>
   <p class="meta" id="p-meta"></p>
+  <p class="upnext" id="upnext" hidden></p>
+  <div class="actions">
+    <button class="pill" id="p-fav" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.6 5c2.1 0 3.6 1.2 4.4 2.5.8-1.3 2.3-2.5 4.4-2.5C19 5 21 8.6 19.6 11.8 17.5 16.4 12 21 12 21z"/></svg>
+      <span>Favourite</span>
+    </button>
+    <button class="pill" id="p-addpl" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Add to playlist
+    </button>
+  </div>
 
   <div class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-tab="lyrics">Lyrics</button>
-    <button role="tab" aria-selected="false" data-tab="facts">Key facts</button>
+    <button role="tab" aria-selected="false" data-tab="facts">Explain</button>
     <button role="tab" aria-selected="false" data-tab="quiz">Quiz</button>
   </div>
   <div id="tab-lyrics" class="lyrics"></div>
-  <div id="tab-facts" hidden><ul class="facts" id="facts"></ul></div>
+  <div id="tab-facts" class="explain" hidden>
+    <button class="btn small" id="read-explain" type="button">Read it out clearly</button>
+    <div id="explain-body"></div>
+    <h3>Key facts</h3>
+    <ul class="facts" id="facts"></ul>
+  </div>
   <div id="tab-quiz" class="quiz" hidden></div>
   <p style="padding-bottom:140px"><button class="link-btn danger-link" id="delete" type="button">Delete this track</button></p>
 
@@ -334,8 +427,7 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
           <label class="ctl">Speed <input id="speed" type="range" min="0.8" max="1.2" step="0.05" value="1"></label>
         </div>
         <div class="deck-row">
-          <button class="toggle" id="t-voice" type="button" aria-pressed="true">Voice</button>
-          <button class="toggle" id="t-beat" type="button" aria-pressed="true">Beat</button>
+          <button class="toggle" id="t-sound" type="button">Sound</button>
           <button class="toggle" id="t-chorus" type="button" aria-pressed="false">Loop chorus</button>
         </div>
       </div>
@@ -343,6 +435,29 @@ textarea{ min-height:150px; resize:vertical; margin-bottom:14px; line-height:1.5
     </div>
   </div>
 </div>
+
+<dialog id="sound-dlg" aria-labelledby="sound-h">
+  <h2 id="sound-h">Sound</h2>
+  <label class="field"><span>Beat</span><select id="set-beat"></select></label>
+  <label class="field"><span>Voice</span><select id="set-voice"></select></label>
+  <p class="hint">Voices come from this device. Ones marked ★ usually sound the most natural.</p>
+  <label class="field"><span>Style of voice</span><select id="set-delivery"></select></label>
+  <label class="switch">Rap flow (phrases land on the beat)<input type="checkbox" id="set-flow"></label>
+  <label class="switch">Hype man echoes the rhymes<input type="checkbox" id="set-hype"></label>
+  <label class="switch">Rap-along mode (no voice, just lyrics)<input type="checkbox" id="set-karaoke"></label>
+  <div class="dlg-foot"><button class="btn small ghost" id="sound-test" type="button">Test voice</button><button class="btn small" id="sound-done" type="button">Done</button></div>
+</dialog>
+
+<dialog id="pl-dlg" aria-labelledby="pl-dlg-h">
+  <h2 id="pl-dlg-h">Add to playlist</h2>
+  <div class="pl-pick" id="pl-pick"></div>
+  <form class="new-pl" id="dlg-new-pl" style="margin-top:16px">
+    <label class="sr" for="dlg-new-name">New playlist name</label>
+    <input id="dlg-new-name" placeholder="New playlist" maxlength="40">
+    <button class="btn small" type="submit">Create</button>
+  </form>
+  <div class="dlg-foot"><button class="btn small" id="pl-dlg-done" type="button">Done</button></div>
+</dialog>
 
 <div class="toast" id="toast" role="status" hidden></div>
 
